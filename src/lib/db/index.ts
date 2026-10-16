@@ -102,7 +102,7 @@ async function initializeTables() {
         recipient_name VARCHAR(255) NOT NULL,
         recipient_email VARCHAR(255) NOT NULL,
         course_or_role VARCHAR(255) NOT NULL,
-        issuing_org VARCHAR(255) NOT NULL DEFAULT 'Dezinet Engineering Labs',
+        issuing_org VARCHAR(255) NOT NULL DEFAULT 'TrustSeal Credential Authority',
         issue_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
         expiry_date TIMESTAMPTZ,
         status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
@@ -163,7 +163,7 @@ export async function createCredentialWithOutbox(data: {
     recipient: data.recipient_name,
     email: data.recipient_email,
     role: data.course_or_role,
-    org: data.issuing_org || 'Dezinet Engineering Labs',
+    org: data.issuing_org || 'TrustSeal Credential Authority',
     issuedAt: now,
   });
   const sha256_hash = crypto.createHash('sha256').update(payloadToHash).digest('hex');
@@ -179,7 +179,7 @@ export async function createCredentialWithOutbox(data: {
     recipient_name: data.recipient_name,
     recipient_email: data.recipient_email,
     course_or_role: data.course_or_role,
-    issuing_org: data.issuing_org || 'Dezinet Engineering Labs',
+    issuing_org: data.issuing_org || 'TrustSeal Credential Authority',
     issue_date: now,
     expiry_date: data.expiry_date || null,
     status: 'SEALED',

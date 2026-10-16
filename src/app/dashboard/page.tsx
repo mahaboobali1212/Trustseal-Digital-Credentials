@@ -45,7 +45,8 @@ export default function DashboardPage() {
   // Form State
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
-  const [role, setRole] = useState('Software Engineering Intern - Backend');
+  const [role, setRole] = useState('Java Full Stack Developer');
+  const [issuingOrg, setIssuingOrg] = useState('TrustSeal Credential Authority');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [lastIssuedId, setLastIssuedId] = useState<string | null>(null);
 
@@ -111,7 +112,7 @@ export default function DashboardPage() {
           recipient_name: recipientName,
           recipient_email: recipientEmail,
           course_or_role: role,
-          issuing_org: 'Dezinet Engineering Labs',
+          issuing_org: issuingOrg || 'TrustSeal Credential Authority',
         }),
       });
 
@@ -257,19 +258,35 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Internship Program / Role</label>
-                <select
+                <label className="block text-slate-300 font-medium mb-1">Issuing Authority / Organization</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. EduSkills & APSCHE or TrustSeal Authority"
+                  value={issuingOrg}
+                  onChange={(e) => setIssuingOrg(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Internship Program / Role / Course</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Java Full Stack Developer"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="Software Engineering Intern - Backend">Software Engineering Intern - Backend</option>
-                  <option value="Event-Driven Microservices Specialist">Event-Driven Microservices Specialist</option>
-                  <option value="Full-Stack Engineer (Next.js 15 & gRPC)">Full-Stack Engineer (Next.js 15 & gRPC)</option>
-                  <option value="Official 8th Semester Industry NOC Experience">
-                    Official 8th Semester Industry NOC Experience
-                  </option>
-                </select>
+                  list="role-suggestions"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                />
+                <datalist id="role-suggestions">
+                  <option value="Java Full Stack Developer" />
+                  <option value="Software Engineering Intern - Backend" />
+                  <option value="Event-Driven Microservices Specialist" />
+                  <option value="Full-Stack Engineer (Next.js 15 & gRPC)" />
+                  <option value="Short-Term Internship for 120 Hours on Java Full Stack Developer" />
+                </datalist>
               </div>
 
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
