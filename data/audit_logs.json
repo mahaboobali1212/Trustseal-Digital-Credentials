@@ -1,0 +1,14 @@
+[
+  {
+    "id": "30094ee3-bb35-4b92-b60d-28328645c586",
+    "created_at": "2026-10-16T10:09:30.449Z",
+    "credential_id": "DEZI-2026-A80B3C",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.26100.9444",
+    "details": {
+      "latencyMs": 13.54,
+      "transport": "IN_PROCESS"
+    }
+  }
+]

@@ -5,10 +5,15 @@
  * Implements the Transactional Outbox Pattern to eliminate the Dual-Write Problem.
  * Guarantees that credentials and their corresponding event records are committed
  * atomically within the same database transaction.
+ *
+ * In local developer mode (when PostgreSQL is not connected), uses a persistent
+ * JSON disk storage engine in `data/` so credentials survive server restarts.
  */
 
 import { Pool, PoolClient } from 'pg';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 export interface CredentialRecord {
   id: string;
@@ -49,14 +54,112 @@ export interface AuditLog {
   created_at: string;
 }
 
-// Global in-memory fallback state for zero-dependency local testing
-const inMemoryStore = {
-  credentials: new Map<string, CredentialRecord>(),
-  outbox: new Map<string, OutboxEvent>(),
-  auditLogs: [] as AuditLog[],
-};
+// ====================================================================
+// Local Disk Persistence Engine (Survives Server Restarts)
+// ====================================================================
+const DATA_DIR = path.resolve(process.cwd(), 'data');
+const CREDENTIALS_FILE = path.join(DATA_DIR, 'credentials.json');
+const OUTBOX_FILE = path.join(DATA_DIR, 'outbox.json');
+const AUDIT_FILE = path.join(DATA_DIR, 'audit_logs.json');
 
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+function loadLocalStore(): {
+  credentials: Map<string, CredentialRecord>;
+  outbox: Map<string, OutboxEvent>;
+  auditLogs: AuditLog[];
+} {
+  ensureDataDir();
+  const credentialsMap = new Map<string, CredentialRecord>();
+  const outboxMap = new Map<string, OutboxEvent>();
+  let auditLogs: AuditLog[] = [];
+
+  // Seed default demonstration certificate for instant testing
+  const seedCredId = 'DEZI-2026-A80B3C';
+  const seedTimestamp = new Date().toISOString();
+  const seedPayload = JSON.stringify({
+    id: seedCredId,
+    recipient: 'SHAIK MAHABOOB ALI',
+    email: 'mahaboob@college.edu',
+    role: 'Java Full Stack Developer',
+    org: 'EduSkills & APSCHE (TrustSeal Authority)',
+    issuedAt: seedTimestamp,
+  });
+  const seedHash = crypto.createHash('sha256').update(seedPayload).digest('hex');
+  const seedSignature = crypto
+    .createHmac('sha256', process.env.SIGNING_SECRET || 'dezinet-internship-secret-key-2026')
+    .update(seedHash)
+    .digest('hex');
+
+  const defaultSeed: CredentialRecord = {
+    id: seedCredId,
+    recipient_name: 'SHAIK MAHABOOB ALI',
+    recipient_email: 'mahaboob@college.edu',
+    course_or_role: 'Java Full Stack Developer',
+    issuing_org: 'EduSkills & APSCHE (TrustSeal Authority)',
+    issue_date: seedTimestamp,
+    status: 'SEALED',
+    sha256_hash: seedHash,
+    digital_signature: seedSignature,
+    created_at: seedTimestamp,
+    updated_at: seedTimestamp,
+  };
+  credentialsMap.set(seedCredId, defaultSeed);
+
+  try {
+    if (fs.existsSync(CREDENTIALS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, 'utf-8'));
+      if (Array.isArray(data)) {
+        data.forEach((c: CredentialRecord) => credentialsMap.set(c.id, c));
+      }
+    }
+    if (fs.existsSync(OUTBOX_FILE)) {
+      const data = JSON.parse(fs.readFileSync(OUTBOX_FILE, 'utf-8'));
+      if (Array.isArray(data)) {
+        data.forEach((o: OutboxEvent) => outboxMap.set(o.id, o));
+      }
+    }
+    if (fs.existsSync(AUDIT_FILE)) {
+      auditLogs = JSON.parse(fs.readFileSync(AUDIT_FILE, 'utf-8'));
+    }
+  } catch (err) {
+    console.warn('Could not read local data store, initialized with defaults:', err);
+  }
+
+  return { credentials: credentialsMap, outbox: outboxMap, auditLogs };
+}
+
+const localStore = loadLocalStore();
+
+function saveLocalStore() {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(
+      CREDENTIALS_FILE,
+      JSON.stringify(Array.from(localStore.credentials.values()), null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      OUTBOX_FILE,
+      JSON.stringify(Array.from(localStore.outbox.values()), null, 2),
+      'utf-8'
+    );
+    fs.writeFileSync(AUDIT_FILE, JSON.stringify(localStore.auditLogs, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed to save local store:', err);
+  }
+}
+
+// Save initial seed if file doesn't exist
+saveLocalStore();
+
+// ====================================================================
 // PostgreSQL Pool configuration
+// ====================================================================
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL ||
@@ -68,9 +171,6 @@ const pool = new Pool({
 
 let isPostgresAvailable: boolean | null = null;
 
-/**
- * Checks if the PostgreSQL server is reachable.
- */
 export async function checkDatabaseConnection(): Promise<boolean> {
   if (isPostgresAvailable !== null) return isPostgresAvailable;
   try {
@@ -82,18 +182,11 @@ export async function checkDatabaseConnection(): Promise<boolean> {
     await initializeTables();
     return true;
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      `⚠️ [PostgreSQL] Connection failed (${message}). Falling back to in-memory ACID store.`
-    );
     isPostgresAvailable = false;
     return false;
   }
 }
 
-/**
- * Ensures required tables exist when PostgreSQL is available.
- */
 async function initializeTables() {
   try {
     const sql = `
@@ -142,9 +235,6 @@ async function initializeTables() {
 
 /**
  * CORE PILLAR 05: The Transactional Outbox Pattern
- *
- * Saves the credential AND writes the outbox event in a single atomic transaction.
- * If either step fails, the entire transaction rolls back.
  */
 export async function createCredentialWithOutbox(data: {
   recipient_name: string;
@@ -154,10 +244,9 @@ export async function createCredentialWithOutbox(data: {
   expiry_date?: string | null;
   metadata?: Record<string, unknown>;
 }): Promise<{ credential: CredentialRecord; outboxEvent: OutboxEvent }> {
-  const credentialId = `DEZI-${new Date().getFullYear()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  const credentialId = `DEZI-2026-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   const now = new Date().toISOString();
 
-  // 1. Compute deterministic SHA-256 fingerprint for tamper-proofing
   const payloadToHash = JSON.stringify({
     id: credentialId,
     recipient: data.recipient_name,
@@ -168,7 +257,6 @@ export async function createCredentialWithOutbox(data: {
   });
   const sha256_hash = crypto.createHash('sha256').update(payloadToHash).digest('hex');
 
-  // Simulated HMAC digital signature (in real production, signed by the gRPC crypto service private key)
   const digital_signature = crypto
     .createHmac('sha256', process.env.SIGNING_SECRET || 'dezinet-internship-secret-key-2026')
     .update(sha256_hash)
@@ -214,9 +302,7 @@ export async function createCredentialWithOutbox(data: {
   if (hasPostgres) {
     const client: PoolClient = await pool.connect();
     try {
-      // ATOMIC TRANSACTION: Both inserts succeed or both fail
       await client.query('BEGIN');
-
       const insertCredSql = `
         INSERT INTO credentials (
           id, recipient_name, recipient_email, course_or_role, issuing_org,
@@ -264,43 +350,35 @@ export async function createCredentialWithOutbox(data: {
       client.release();
     }
   } else {
-    // In-memory atomic store
-    inMemoryStore.credentials.set(credential.id, credential);
-    inMemoryStore.outbox.set(outboxEvent.id, outboxEvent);
+    // Persistent disk storage
+    localStore.credentials.set(credential.id, credential);
+    localStore.outbox.set(outboxEvent.id, outboxEvent);
+    saveLocalStore();
   }
 
   return { credential, outboxEvent };
 }
 
-/**
- * Fetches all credentials ordered by creation date.
- */
 export async function getAllCredentials(): Promise<CredentialRecord[]> {
   const hasPostgres = await checkDatabaseConnection();
   if (hasPostgres) {
     const res = await pool.query('SELECT * FROM credentials ORDER BY created_at DESC');
     return res.rows;
   }
-  return Array.from(inMemoryStore.credentials.values()).sort(
+  return Array.from(localStore.credentials.values()).sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 }
 
-/**
- * Fetches a single credential by ID.
- */
 export async function getCredentialById(id: string): Promise<CredentialRecord | null> {
   const hasPostgres = await checkDatabaseConnection();
   if (hasPostgres) {
     const res = await pool.query('SELECT * FROM credentials WHERE id = $1', [id]);
     return res.rows[0] || null;
   }
-  return inMemoryStore.credentials.get(id) || null;
+  return localStore.credentials.get(id) || null;
 }
 
-/**
- * Retrieves uncommitted/pending outbox events for the Kafka Relay Worker.
- */
 export async function getPendingOutboxEvents(limit = 20): Promise<OutboxEvent[]> {
   const hasPostgres = await checkDatabaseConnection();
   if (hasPostgres) {
@@ -310,14 +388,11 @@ export async function getPendingOutboxEvents(limit = 20): Promise<OutboxEvent[]>
     );
     return res.rows;
   }
-  return Array.from(inMemoryStore.outbox.values())
+  return Array.from(localStore.outbox.values())
     .filter((e) => e.status === 'PENDING')
     .slice(0, limit);
 }
 
-/**
- * Marks an outbox event as published after Kafka ACK.
- */
 export async function markOutboxEventPublished(id: string): Promise<void> {
   const hasPostgres = await checkDatabaseConnection();
   const now = new Date().toISOString();
@@ -327,17 +402,15 @@ export async function markOutboxEventPublished(id: string): Promise<void> {
       [now, id]
     );
   } else {
-    const event = inMemoryStore.outbox.get(id);
+    const event = localStore.outbox.get(id);
     if (event) {
       event.status = 'PUBLISHED';
       event.published_at = now;
+      saveLocalStore();
     }
   }
 }
 
-/**
- * Records an audit log entry.
- */
 export async function recordAuditLog(log: Omit<AuditLog, 'id' | 'created_at'>): Promise<AuditLog> {
   const record: AuditLog = {
     id: crypto.randomUUID(),
@@ -360,14 +433,12 @@ export async function recordAuditLog(log: Omit<AuditLog, 'id' | 'created_at'>): 
       ]
     );
   } else {
-    inMemoryStore.auditLogs.unshift(record);
+    localStore.auditLogs.unshift(record);
+    saveLocalStore();
   }
   return record;
 }
 
-/**
- * Retrieves audit logs for a given credential.
- */
 export async function getAuditLogsForCredential(credentialId: string): Promise<AuditLog[]> {
   const hasPostgres = await checkDatabaseConnection();
   if (hasPostgres) {
@@ -377,5 +448,5 @@ export async function getAuditLogsForCredential(credentialId: string): Promise<A
     );
     return res.rows;
   }
-  return inMemoryStore.auditLogs.filter((l) => l.credential_id === credentialId);
+  return localStore.auditLogs.filter((l) => l.credential_id === credentialId);
 }
