@@ -35,57 +35,48 @@ It eliminates the industry-wide **Dual-Write Problem** when issuing digital cred
 
 ```mermaid
 flowchart TD
-    classDef client fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0f172a;
-    classDef gateway fill:#f8fafc,stroke:#334155,stroke-width:2px,color:#0f172a;
-    classDef engine fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#064e3b;
-    classDef storage fill:#fffbeb,stroke:#d97706,stroke-width:2px,color:#78350f;
-    classDef micro fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px,color:#4c1d95;
-
     subgraph Clients["User & Verification Channels"]
-        Issuer["Admin / Issuer\n(Dashboard UI)"]:::client
-        MobileUser["Public Verifier / Employer\n(Mobile Phone Camera)"]:::client
+        Issuer["Admin / Issuer<br/>(Dashboard UI)"]
+        MobileUser["Public Verifier / Employer<br/>(Mobile Phone Camera)"]
     end
 
     subgraph AppGateway["Next.js Application Layer"]
-        DashboardRoute["Issuer Dashboard\n(/dashboard)"]:::gateway
-        CertRoute["Certificate Document & PDF Engine\n(/certificate/:id)"]:::gateway
-        VerifyRoute["Isolated Mobile Verification Card\n(/verify/:id)"]:::gateway
-        RESTAPI["Credential & Outbox APIs\n(/api/v1/credentials)"]:::gateway
-        EventStream["Live Event Stream\n(/api/v1/events/stream)"]:::gateway
+        DashboardRoute["Issuer Dashboard<br/>(/dashboard)"]
+        CertRoute["Certificate Document & PDF Engine<br/>(/certificate/:id)"]
+        VerifyRoute["Isolated Mobile Verification Card<br/>(/verify/:id)"]
+        RESTAPI["Credential & Outbox APIs<br/>(/api/v1/credentials)"]
+        EventStream["Live Event Stream<br/>(/api/v1/events/stream)"]
     end
 
     subgraph CoreEngine["Outbox & Messaging Core"]
-        OutboxRelay["Transactional Outbox Relay\n(Poller-Publisher Daemon)"]:::engine
-        KafkaBroker["Apache Kafka Event Bus\n(Topic: credential.issued)"]:::engine
+        OutboxRelay["Transactional Outbox Relay<br/>(Poller-Publisher Daemon)"]
+        KafkaBroker["Apache Kafka Event Bus<br/>(Topic: credential.issued)"]
     end
 
     subgraph StorageLayer["Data & Cache Tier"]
-        PostgresDB[("PostgreSQL 16 Database\n(Credentials + Outbox Events)")]:::storage
-        RedisCache[("Redis 7 In-Memory Cache\n(Sub-2ms Verification)")]:::storage
-        LocalStore[("Persistent Disk Storage\n(Zero-Loss Fallback Engine)")]:::storage
+        PostgresDB[("PostgreSQL 16 Database<br/>Credentials and Outbox Events")]
+        RedisCache[("Redis 7 In-Memory Cache<br/>Sub-2ms Verification")]
+        LocalStore[("Persistent Disk Storage<br/>Zero-Loss Fallback Engine")]
     end
 
     subgraph SecurityTier["Cryptographic Microservices"]
-        gRPCService["gRPC Crypto Engine\n(Port 50051 / Protocol Buffers)"]:::micro
+        gRPCService["gRPC Crypto Engine<br/>(Port 50051 / Protocol Buffers)"]
     end
 
-    %% Issuer Flow
-    Issuer -->|1. Customize & Issue Credential| DashboardRoute
+    %% Flows
+    Issuer -->|1. Issue Credential| DashboardRoute
     DashboardRoute -->|2. ACID Transactional Outbox| RESTAPI
     RESTAPI -->|3. Atomic Commit| PostgresDB
-    RESTAPI -.->|Local Development Mode| LocalStore
+    RESTAPI -.->|Local Fallback Mode| LocalStore
 
-    %% Certificate & PDF Flow
     Issuer -->|4. View Certificate & Download PDF| CertRoute
     CertRoute -->|Generates Scannable QR Seal| VerifyRoute
 
-    %% Event Stream Flow
     OutboxRelay -->|5. Read Pending Outbox| PostgresDB
     OutboxRelay -->|6. Publish Events| KafkaBroker
     KafkaBroker -.->|Broadcast Live Events| EventStream
     EventStream -.->|Push to Dashboard UI| DashboardRoute
 
-    %% Mobile Verification Flow
     MobileUser -->|7. Scan QR Code via Phone| VerifyRoute
     VerifyRoute -->|8. Fast Cache-Aside Lookup| RedisCache
     RedisCache -.->|Cache Miss: Fetch Record| PostgresDB
