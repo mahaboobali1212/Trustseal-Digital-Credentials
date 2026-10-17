@@ -1,5 +1,137 @@
 [
   {
+    "id": "e7955699-91f0-43f9-8e35-e0e53c53bb76",
+    "created_at": "2026-10-17T08:10:29.618Z",
+    "credential_id": "DEZI-2026-1D2A85",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 23.52,
+      "transport": "IN_PROCESS"
+    }
+  },
+  {
+    "id": "47847609-e52d-4e3d-9a3c-868658f80b2f",
+    "created_at": "2026-10-17T08:10:29.608Z",
+    "credential_id": "DEZI-2026-1D2A85",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 62.39,
+      "transport": "IN_PROCESS"
+    }
+  },
+  {
+    "id": "76347eff-75cf-4205-bb86-13aaf7340e9c",
+    "created_at": "2026-10-17T07:13:45.215Z",
+    "credential_id": "RNGD4AEG1CBG",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.26100.9444",
+    "details": {
+      "latencyMs": 37.4,
+      "transport": "IN_PROCESS"
+    }
+  },
+  {
+    "id": "31633758-49a8-49d3-b924-fed9329030c9",
+    "created_at": "2026-10-17T04:35:39.552Z",
+    "credential_id": "DEZI-2026-52D74F",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 42.94,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "542b4e73-7567-4d37-806c-a5ecfbf4f8cd",
+    "created_at": "2026-10-17T04:35:39.535Z",
+    "credential_id": "DEZI-2026-52D74F",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 116.3,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "4b6f83ad-cf71-4846-9ded-f3684b0be5a9",
+    "created_at": "2026-10-17T04:10:48.553Z",
+    "credential_id": "DEZI-2026-A80B3C",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 299.52,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "d454613f-1bdc-4671-8bca-2f0477288dab",
+    "created_at": "2026-10-17T04:10:48.538Z",
+    "credential_id": "DEZI-2026-A80B3C",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 285.58,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "cdbdccce-82bf-465d-a133-1aba0260ca39",
+    "created_at": "2026-10-17T04:10:48.521Z",
+    "credential_id": "DEZI-2026-A80B3C",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 267.35,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "efb53c98-42cc-404c-a7ae-c032d863747f",
+    "created_at": "2026-10-16T17:34:07.398Z",
+    "credential_id": "DEZI-2026-6084F8",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 8.41,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "484733c4-39bf-44e5-8ff1-a0a6a4583ca7",
+    "created_at": "2026-10-16T17:33:40.968Z",
+    "credential_id": "DEZI-2026-A80B3C",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 137.31,
+      "transport": "gRPC"
+    }
+  },
+  {
+    "id": "8f9228c3-1acb-4180-ae3c-46f8129fb09c",
+    "created_at": "2026-10-16T14:45:10.278Z",
+    "credential_id": "DEZI-2026-A80B3C",
+    "action": "VERIFIED_SUCCESS",
+    "actor_ip": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "details": {
+      "latencyMs": 20.54,
+      "transport": "IN_PROCESS"
+    }
+  },
+  {
     "id": "30094ee3-bb35-4b92-b60d-28328645c586",
     "created_at": "2026-10-16T10:09:30.449Z",
     "credential_id": "DEZI-2026-A80B3C",

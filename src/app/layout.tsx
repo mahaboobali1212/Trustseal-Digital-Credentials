@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'TrustSeal | Tamper-Proof Digital Credential & Verification Engine',
   description:
-    'High-throughput event-driven microservices architecture featuring Next.js 15, PostgreSQL ACID Outbox, Apache Kafka, gRPC over mTLS, and Redis caching.',
+    'Enterprise digital credential engine with tamper-proof cryptographic verification, company customization preferences, and instant scannable verification.',
 };
 
 export default function RootLayout({
@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full bg-slate-950 text-slate-100">
-      <body className="min-h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <html lang="en" className="h-full bg-[#EAF1F3] text-[#17262C]">
+      <body className="min-h-full flex flex-col font-sans selection:bg-[#8DAEB6] selection:text-[#17262C]">
         {children}
       </body>
     </html>

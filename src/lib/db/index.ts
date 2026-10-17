@@ -105,10 +105,68 @@ function loadLocalStore(): {
     status: 'SEALED',
     sha256_hash: seedHash,
     digital_signature: seedSignature,
+    metadata: {
+      certificate_type: 'INTERNSHIP',
+      certificate_title: 'Certificate of Achievement & Practical Engineering Completion',
+      certificate_subtitle: 'Recognized Practical Engineering Certification & Experience Verification',
+      custom_description: 'In recognition of outstanding performance and completion of the intensive software engineering program in Java Full Stack Development & Distributed Systems. Demonstrating mastery in event streaming, ACID transactional reliability, and cryptographic verification.',
+      department: 'Engineering & Technology',
+      signatory_name: 'Director of Engineering',
+      signatory_title: 'Authorized Credential Signatory',
+      custom_fields: [
+        { key: 'Program Duration', value: '120 Hours (Intensive)' },
+        { key: 'Performance Grade', value: 'Exemplary / O-Grade' },
+      ],
+    },
     created_at: seedTimestamp,
     updated_at: seedTimestamp,
   };
   credentialsMap.set(seedCredId, defaultSeed);
+
+  // EduSkills Official Verification Demo Certificate (Matches QR Code RNGD4AEG1CBG)
+  const eduCredId = 'RNGD4AEG1CBG';
+  const eduPayload = JSON.stringify({
+    id: eduCredId,
+    recipient: 'SHAIK MAHABOOB ALI',
+    email: 'mahaboob@college.edu',
+    role: 'Java Full Stack Developer',
+    org: 'EduSkills Foundation & APSCHE',
+    issuedAt: '2026-10-16T10:09:30.434Z',
+  });
+  const eduHash = crypto.createHash('sha256').update(eduPayload).digest('hex');
+  const eduSignature = crypto
+    .createHmac('sha256', process.env.SIGNING_SECRET || 'dezinet-internship-secret-key-2026')
+    .update(eduHash)
+    .digest('hex');
+
+  const eduSeed: CredentialRecord = {
+    id: eduCredId,
+    recipient_name: 'SHAIK MAHABOOB ALI',
+    recipient_email: 'mahaboob@college.edu',
+    course_or_role: 'Java Full Stack Developer',
+    issuing_org: 'EduSkills Foundation',
+    issue_date: '2026-10-16T10:09:30.434Z',
+    expiry_date: null,
+    status: 'SEALED',
+    sha256_hash: eduHash,
+    digital_signature: eduSignature,
+    metadata: {
+      certificate_type: 'INTERNSHIP',
+      certificate_title: 'Certificate of Internship & Skill Completion',
+      certificate_subtitle: 'Recognized Technical Skill Verification & Academic Endorsement',
+      custom_description: 'In recognition of outstanding performance and completion of the intensive 120-hour practical internship in Java Full Stack Development. Demonstrating mastery in enterprise applications, API engineering, and distributed architectures.',
+      department: 'Engineering & Technology',
+      signatory_name: 'Executive Director',
+      signatory_title: 'EduSkills Foundation',
+      custom_fields: [
+        { key: 'Program Duration', value: '120 Hours' },
+        { key: 'Council Endorsement', value: 'APSCHE Approved' },
+      ],
+    },
+    created_at: '2026-10-16T10:09:30.434Z',
+    updated_at: '2026-10-16T10:09:30.434Z',
+  };
+  credentialsMap.set(eduCredId, eduSeed);
 
   try {
     if (fs.existsSync(CREDENTIALS_FILE)) {
@@ -154,8 +212,10 @@ function saveLocalStore() {
   }
 }
 
-// Save initial seed if file doesn't exist
-saveLocalStore();
+// Save initial seed only if credentials file doesn't exist yet
+if (!fs.existsSync(CREDENTIALS_FILE)) {
+  saveLocalStore();
+}
 
 // ====================================================================
 // PostgreSQL Pool configuration
@@ -166,13 +226,22 @@ const pool = new Pool({
     'postgresql://postgres:postgres@localhost:5432/trustseal',
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 1000,
 });
 
-let isPostgresAvailable: boolean | null = null;
+// Prevent unhandled error events from crashing the process when Postgres is offline
+pool.on('error', () => {
+  isPostgresAvailable = false;
+});
+
+let isPostgresAvailable: boolean | null = process.env.DATABASE_URL ? null : false;
 
 export async function checkDatabaseConnection(): Promise<boolean> {
   if (isPostgresAvailable !== null) return isPostgresAvailable;
+  if (!process.env.DATABASE_URL) {
+    isPostgresAvailable = false;
+    return false;
+  }
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
@@ -371,12 +440,29 @@ export async function getAllCredentials(): Promise<CredentialRecord[]> {
 }
 
 export async function getCredentialById(id: string): Promise<CredentialRecord | null> {
+  const cleanId = (id || '').trim();
   const hasPostgres = await checkDatabaseConnection();
   if (hasPostgres) {
-    const res = await pool.query('SELECT * FROM credentials WHERE id = $1', [id]);
+    const res = await pool.query('SELECT * FROM credentials WHERE UPPER(id) = UPPER($1)', [cleanId]);
     return res.rows[0] || null;
   }
-  return localStore.credentials.get(id) || null;
+
+  // Exact match
+  if (localStore.credentials.has(cleanId)) {
+    return localStore.credentials.get(cleanId)!;
+  }
+  // Uppercase match
+  const upper = cleanId.toUpperCase();
+  if (localStore.credentials.has(upper)) {
+    return localStore.credentials.get(upper)!;
+  }
+  // Case-insensitive iteration
+  for (const cred of localStore.credentials.values()) {
+    if (cred.id.toLowerCase() === cleanId.toLowerCase()) {
+      return cred;
+    }
+  }
+  return null;
 }
 
 export async function getPendingOutboxEvents(limit = 20): Promise<OutboxEvent[]> {
@@ -434,7 +520,7 @@ export async function recordAuditLog(log: Omit<AuditLog, 'id' | 'created_at'>): 
     );
   } else {
     localStore.auditLogs.unshift(record);
-    saveLocalStore();
+    // Kept in memory to prevent Turbopack file-watcher from triggering page reloads
   }
   return record;
 }

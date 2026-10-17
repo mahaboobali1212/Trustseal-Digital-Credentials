@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --canvas-bg: #eaf1f3;
+  --card-bg: #ffffff;
+  --primary-slate: #1c2e35;
+  --secondary-slate: #2b454e;
+  --accent-powder: #8daeb6;
+  --border-light: #d5e3e6;
+  --text-primary: #17262c;
+  --text-muted: #64748b;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--canvas-bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Luxury Editorial & Certificate Typography */
+.font-serif-title {
+  font-family: "Georgia", "Baskerville", "Palatino Linotype", "Playfair Display", serif;
+}
+
+/* ==================================================================== */
+/* STRICT SINGLE-PAGE PRINT & PDF ISOLATION (GUARANTEED 1 OF 1 PAGE)    */
+/* ==================================================================== */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: 297mm !important;
+    max-height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide the entire website DOM */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show ONLY the formal certificate and its contents */
+  #formal-certificate,
+  #formal-certificate * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Lock the certificate to exactly 1 single A4 landscape page */
+  #formal-certificate {
+    position: fixed !important;
+    left: 8mm !important;
+    top: 8mm !important;
+    width: 281mm !important;
+    height: 194mm !important;
+    max-width: 281mm !important;
+    max-height: 194mm !important;
+    margin: 0 !important;
+    padding: 10mm 16mm !important;
+    border: 5px double #1c2e35 !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-inside: avoid !important;
+    break-before: avoid !important;
+    break-after: avoid !important;
+    z-index: 999999 !important;
+  }
+
+  /* Hide the background watermark during print to eliminate any layering/page split artifacts */
+  .certificate-watermark {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
 }

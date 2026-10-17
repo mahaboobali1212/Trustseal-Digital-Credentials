@@ -74,12 +74,19 @@ export async function GET(
 
     const latencyMs = Number((performance.now() - startTime).toFixed(2));
 
-    return NextResponse.json({
-      success: true,
-      source: 'DATABASE_GRPC',
-      latencyMs,
-      data: verificationPayload,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        source: 'DATABASE_GRPC',
+        latencyMs,
+        data: verificationPayload,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(

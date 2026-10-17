@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Interview notes / questions
+INTERVIEW_CHEATSHEET.md
+*interview*
+
+# Temporary local tunnel file
+data/tunnel-url.txt
+

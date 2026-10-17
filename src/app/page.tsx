@@ -1,169 +1,170 @@
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
-  Zap,
-  Cpu,
-  Layers,
-  Radio,
-  Lock,
+  Search,
   ArrowRight,
-  ExternalLink,
-  Server,
-  FileCheck2,
+  Award,
+  CheckCircle2,
+  Lock,
+  Cpu,
+  Zap,
+  Building,
 } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
+  const [searchId, setSearchId] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchId.trim()) return;
+    router.push(`/verify/${searchId.trim()}`);
+  };
+
+  const handleQuickTest = (id: string) => {
+    setSearchId(id);
+    router.push(`/verify/${id}`);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#EAF1F3] text-[#17262C] flex flex-col">
+      {/* Top Navigation */}
+      <header className="border-b border-[#D5E3E6] bg-white/80 backdrop-blur-md px-6 md:px-12 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center space-x-3">
-          <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-600/30">
-            <ShieldCheck className="w-5 h-5" />
+          <div className="bg-[#1C2E35] p-2.5 rounded-xl text-white shadow-sm">
+            <ShieldCheck className="w-5 h-5 text-[#8DAEB6]" />
           </div>
           <div>
-            <span className="font-extrabold text-base tracking-tight text-white">TrustSeal</span>
-            <span className="ml-2 text-[10px] font-mono bg-indigo-950 text-indigo-400 border border-indigo-800/80 px-2 py-0.5 rounded-full uppercase">
-              Production Architecture
+            <span className="font-serif-title font-bold text-xl tracking-tight text-[#1C2E35]">TrustSeal</span>
+            <span className="hidden sm:inline-block ml-2 text-[11px] font-sans text-[#64748B] uppercase tracking-wider">
+              Verification Engine
             </span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <nav className="flex items-center space-x-6 text-sm font-medium">
+          <Link href="/" className="text-[#1C2E35] font-semibold">
+            Public Verifier
+          </Link>
+          <Link href="/dashboard" className="text-[#64748B] hover:text-[#1C2E35] transition-colors">
+            Issuer Dashboard
+          </Link>
           <Link
             href="/dashboard"
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-lg shadow-indigo-600/20"
+            className="bg-[#1C2E35] hover:bg-[#2B454E] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm"
           >
             Launch Dashboard
           </Link>
-        </div>
+        </nav>
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-16 md:py-24 space-y-16">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-12 md:py-20 space-y-16">
         <div className="text-center space-y-6 max-w-3xl mx-auto">
-          <div className="inline-flex items-center space-x-2 bg-indigo-950/60 border border-indigo-800/60 text-indigo-300 text-xs px-3.5 py-1.5 rounded-full font-medium">
-            <Lock className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Built for Dezinet Core Engineering Selection</span>
+          <div className="inline-flex items-center space-x-2 bg-white border border-[#D5E3E6] text-[#2B454E] text-xs px-4 py-1.5 rounded-full shadow-xs">
+            <Lock className="w-3.5 h-3.5 text-[#8DAEB6]" />
+            <span>Tamper-Proof Digital Credential Authority</span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Tamper-Proof Digital Credential &{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-              Verification Engine
-            </span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif-title font-bold tracking-tight text-[#1C2E35] leading-tight">
+            Verify Digital Credentials with Cryptographic Certainty
           </h1>
 
-          <p className="text-base md:text-lg text-slate-400 leading-relaxed">
-            A production-grade distributed system solving the <strong>Dual-Write Problem</strong> using the{' '}
-            <strong className="text-slate-200">PostgreSQL ACID Outbox Pattern</strong>, asynchronous event streaming with{' '}
-            <strong className="text-slate-200">Apache Kafka</strong>, sub-millisecond public QR verification with{' '}
-            <strong className="text-slate-200">Redis</strong>, and high-speed cryptographic signature validation via{' '}
-            <strong className="text-slate-200">gRPC</strong>.
+          <p className="text-base md:text-lg text-[#475569] leading-relaxed max-w-2xl mx-auto font-sans">
+            Issue and verify authentic offer letters, internship certificates, and university credentials.
+            Equipped with company customization, instant mobile QR code scanning, and cryptographic anti-tamper sealing.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link
-              href="/dashboard"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-6 py-3 rounded-xl transition-all shadow-xl shadow-indigo-600/25 flex items-center space-x-2"
+          {/* Search Verification Bar */}
+          <div className="pt-4 max-w-2xl mx-auto">
+            <form
+              onSubmit={handleSearch}
+              className="bg-white border border-[#C5D7DC] p-2 rounded-2xl shadow-md hover:border-[#8DAEB6] flex flex-col sm:flex-row items-center gap-2 transition-all"
             >
-              <span>Explore Admin Dashboard</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+              <div className="flex items-center space-x-3 px-3 flex-1 w-full">
+                <Search className="w-5 h-5 text-[#8DAEB6] shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Enter Certificate ID (e.g. DEZI-2026-A80B3C)..."
+                  value={searchId}
+                  onChange={(e) => setSearchId(e.target.value)}
+                  className="bg-transparent border-none text-[#1C2E35] text-sm w-full placeholder-[#94A3B8] focus:outline-none py-2"
+                />
+              </div>
 
-            <Link
-              href="/api/graphql"
-              target="_blank"
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-sm px-5 py-3 rounded-xl transition-colors flex items-center space-x-2"
-            >
-              <span>Explore GraphQL API</span>
-              <ExternalLink className="w-4 h-4 text-slate-500" />
-            </Link>
+              <button
+                type="submit"
+                className="w-full sm:w-auto bg-[#1C2E35] hover:bg-[#2B454E] text-white text-xs font-semibold px-6 py-3 rounded-xl transition-colors shrink-0 flex items-center justify-center space-x-2 shadow-sm"
+              >
+                <span>Verify Credential</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+
+            {/* Quick Demo Previews */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-[#64748B]">
+              <span>Sample Demonstrations:</span>
+              <button
+                type="button"
+                onClick={() => handleQuickTest('RNGD4AEG1CBG')}
+                className="bg-white hover:bg-[#F1F5F7] text-[#1C2E35] border border-[#CBD5E1] px-3 py-1 rounded-lg transition-colors font-semibold flex items-center space-x-1 cursor-pointer"
+              >
+                <span>TrustSeal Verified (RNGD4AEG1CBG)</span>
+                <ArrowRight className="w-3 h-3 text-[#0284C7]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickTest('DEZI-2026-A80B3C')}
+                className="bg-white hover:bg-[#F1F5F7] text-[#1C2E35] border border-[#D5E3E6] px-3 py-1 rounded-lg transition-colors font-medium flex items-center space-x-1 cursor-pointer"
+              >
+                <span>Shaik Mahaboob Ali (DEZI-2026-A80B3C)</span>
+                <ArrowRight className="w-3 h-3 text-[#8DAEB6]" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* The 6 Core Pillars Architecture Cards */}
-        <div className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-xs uppercase font-mono font-bold tracking-widest text-indigo-400">
-              Evaluated Production Standards
-            </h2>
-            <p className="text-2xl font-bold text-white mt-1">The 6 Core Architectural Pillars</p>
+        {/* Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          <div className="bg-white border border-[#D5E3E6] rounded-2xl p-6 shadow-xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-[#EAF1F3] text-[#1C2E35] flex items-center justify-center">
+              <Building className="w-5 h-5 text-[#2B454E]" />
+            </div>
+            <h3 className="font-serif-title font-bold text-lg text-[#1C2E35]">Company Customization</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Every organization defines their own certificate type, custom descriptions, tenure, fields, and authorized signatories.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Pillar 1 */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
-                01
-              </div>
-              <h3 className="text-base font-bold text-white">TypeScript & Next.js 15</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Modern App Router (`app/`), Server Components for blazing-fast LCP, and strict TypeScript interfaces across all data models.
-              </p>
+          <div className="bg-white border border-[#D5E3E6] rounded-2xl p-6 shadow-xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-[#EAF1F3] text-[#1C2E35] flex items-center justify-center">
+              <Award className="w-5 h-5 text-[#2B454E]" />
             </div>
+            <h3 className="font-serif-title font-bold text-lg text-[#1C2E35]">Executive Formal Certificates</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Pristine certificates with Guilloche ornamental frames, gold embossed authority seal, and print-isolated single-page PDF generation.
+            </p>
+          </div>
 
-            {/* Pillar 2 */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center font-bold">
-                02
-              </div>
-              <h3 className="text-base font-bold text-white">GitLab CI/CD & GCP</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Automated linting, type-checking, multi-stage Docker build, and deployment automation ready for Google Cloud.
-              </p>
+          <div className="bg-white border border-[#D5E3E6] rounded-2xl p-6 shadow-xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-[#EAF1F3] text-[#1C2E35] flex items-center justify-center">
+              <Cpu className="w-5 h-5 text-[#2B454E]" />
             </div>
-
-            {/* Pillar 3 */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
-                03
-              </div>
-              <h3 className="text-base font-bold text-white">Apache Kafka Streams</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Decoupled event pipeline publishing `credential.issued` and `credential.verified` with partition-guaranteed ordering.
-              </p>
-            </div>
-
-            {/* Pillar 4 */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
-                04
-              </div>
-              <h3 className="text-base font-bold text-white">GraphQL & gRPC Microservice</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Flexible client queries with GraphQL and high-performance binary Protocol Buffers RPC for cryptographic signature validation.
-              </p>
-            </div>
-
-            {/* Pillar 5 */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
-                05
-              </div>
-              <h3 className="text-base font-bold text-white">PostgreSQL & ACID Outbox</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Eliminates the Dual-Write Problem by atomically committing certificate records and outbox events in a single database transaction.
-              </p>
-            </div>
-
-            {/* Pillar 6 */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold">
-                06
-              </div>
-              <h3 className="text-base font-bold text-white">Redis Cache & WebSockets</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Sub-2ms response times on public QR scans via Redis Cache-Aside, and real-time streaming progress bars for admin issuance.
-              </p>
-            </div>
+            <h3 className="font-serif-title font-bold text-lg text-[#1C2E35]">Cryptographic Anti-Tamper Seal</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              SHA-256 payload hashing and HMAC signatures validate certificate integrity in real-time, preventing unauthorized modifications.
+            </p>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 py-8 text-center text-xs text-slate-500">
-        TrustSeal Distributed Microservices Engine • Built for Dezinet Engineering Internship Selection
+      <footer className="border-t border-[#D5E3E6] bg-white py-6 text-center text-xs text-[#64748B]">
+        TrustSeal Credential Engine • Institutional Verification Platform
       </footer>
     </div>
   );
