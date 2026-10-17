@@ -34,47 +34,62 @@ It eliminates the industry-wide **Dual-Write Problem** when issuing digital cred
 ## 📐 System Architecture Diagram
 
 ```mermaid
-flowchart TB
-    subgraph ClientTier["Client Tier"]
-        AdminUser["Admin / Issuer<br/>(Dashboard)"]
-        PublicScan["Public Verifier / Employer<br/>(QR Code Scan)"]
+flowchart TD
+    classDef client fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0f172a;
+    classDef gateway fill:#f8fafc,stroke:#334155,stroke-width:2px,color:#0f172a;
+    classDef engine fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#064e3b;
+    classDef storage fill:#fffbeb,stroke:#d97706,stroke-width:2px,color:#78350f;
+    classDef micro fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px,color:#4c1d95;
+
+    subgraph Clients["User & Verification Channels"]
+        Issuer["Admin / Issuer\n(Dashboard UI)"]:::client
+        MobileUser["Public Verifier / Employer\n(Mobile Phone Camera)"]:::client
     end
 
-    subgraph GatewayTier["Next.js 15 Gateway Layer"]
-        AppRouter["Next.js App Router<br/>(React 19 / TypeScript)"]
-        RESTAPI["REST Endpoints<br/>(/api/v1/credentials)"]
-        GraphQLEndpoint["GraphQL Endpoint<br/>(/api/graphql)"]
-        SSEStream["Live SSE Stream<br/>(/api/v1/events/stream)"]
+    subgraph AppGateway["Next.js Application Layer"]
+        DashboardRoute["Issuer Dashboard\n(/dashboard)"]:::gateway
+        CertRoute["Certificate Document & PDF Engine\n(/certificate/:id)"]:::gateway
+        VerifyRoute["Isolated Mobile Verification Card\n(/verify/:id)"]:::gateway
+        RESTAPI["Credential & Outbox APIs\n(/api/v1/credentials)"]:::gateway
+        EventStream["Live Event Stream\n(/api/v1/events/stream)"]:::gateway
     end
 
-    subgraph StateTier["State & Persistence"]
-        Postgres[(PostgreSQL 16<br/>Credentials + Outbox Events)]
-        RedisCache[(Redis 7 Cache<br/>Verification Cache)]
+    subgraph CoreEngine["Outbox & Messaging Core"]
+        OutboxRelay["Transactional Outbox Relay\n(Poller-Publisher Daemon)"]:::engine
+        KafkaBroker["Apache Kafka Event Bus\n(Topic: credential.issued)"]:::engine
     end
 
-    subgraph EventTier["Distributed Event Streaming"]
-        OutboxRelay["Outbox Relay Daemon<br/>(Poller-Publisher)"]
-        KafkaBus["Apache Kafka Broker<br/>(KRaft / Topic: credential.issued)"]
+    subgraph StorageLayer["Data & Cache Tier"]
+        PostgresDB[("PostgreSQL 16 Database\n(Credentials + Outbox Events)")]:::storage
+        RedisCache[("Redis 7 In-Memory Cache\n(Sub-2ms Verification)")]:::storage
+        LocalStore[("Persistent Disk Storage\n(Zero-Loss Fallback Engine)")]:::storage
     end
 
-    subgraph MicroserviceTier["Internal Microservices"]
-        GRPCServer["gRPC Crypto Service<br/>(Port 50051 / Protocol Buffers)"]
+    subgraph SecurityTier["Cryptographic Microservices"]
+        gRPCService["gRPC Crypto Engine\n(Port 50051 / Protocol Buffers)"]:::micro
     end
 
-    %% Flow lines
-    AdminUser --> AppRouter
-    PublicScan --> AppRouter
-    AppRouter --> RESTAPI
-    AppRouter --> GraphQLEndpoint
+    %% Issuer Flow
+    Issuer -->|1. Customize & Issue Credential| DashboardRoute
+    DashboardRoute -->|2. ACID Transactional Outbox| RESTAPI
+    RESTAPI -->|3. Atomic Commit| PostgresDB
+    RESTAPI -.->|Local Development Mode| LocalStore
 
-    RESTAPI -->|1. Atomic BEGIN...COMMIT| Postgres
-    OutboxRelay -->|2. Poll Pending Outbox| Postgres
-    OutboxRelay -->|3. Publish Event| KafkaBus
-    KafkaBus -.->|Broadcast| SSEStream
-    SSEStream -.->|Push to UI| AdminUser
+    %% Certificate & PDF Flow
+    Issuer -->|4. View Certificate & Download PDF| CertRoute
+    CertRoute -->|Generates Scannable QR Seal| VerifyRoute
 
-    RESTAPI -->|Check Cache (Sub-2ms)| RedisCache
-    RESTAPI -->|Verify Cryptographic Seal| GRPCServer
+    %% Event Stream Flow
+    OutboxRelay -->|5. Read Pending Outbox| PostgresDB
+    OutboxRelay -->|6. Publish Events| KafkaBroker
+    KafkaBroker -.->|Broadcast Live Events| EventStream
+    EventStream -.->|Push to Dashboard UI| DashboardRoute
+
+    %% Mobile Verification Flow
+    MobileUser -->|7. Scan QR Code via Phone| VerifyRoute
+    VerifyRoute -->|8. Fast Cache-Aside Lookup| RedisCache
+    RedisCache -.->|Cache Miss: Fetch Record| PostgresDB
+    VerifyRoute -->|9. Verify SHA-256 Digital Signature| gRPCService
 ```
 
 ---
@@ -88,13 +103,14 @@ npm test
 ```
 
 ### 2. Run Locally in Development Mode
-Start the Next.js 15 development server:
+Start the Next.js development server:
 ```bash
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser:
 * **Admin Dashboard:** `http://localhost:3000/dashboard`
-* **Public QR Verification Demo:** `http://localhost:3000/verify/<credential-id>`
+* **Official Certificate & PDF Download:** `http://localhost:3000/certificate/<credential-id>`
+* **Public QR Verification:** `http://localhost:3000/verify/<credential-id>`
 * **GraphQL Explorer:** `http://localhost:3000/api/graphql`
 
 ### 3. Run Standalone gRPC Microservice (Optional)
@@ -110,17 +126,13 @@ docker-compose up --build
 
 ---
 
-## 🛡️ Anti-Tamper Demonstration for Technical Interviews
+## 🛡️ Live Cryptographic Verification & Anti-Tamper Demonstration
 
 1. Navigate to the **Admin Dashboard** (`/dashboard`).
-2. Issue a digital certificate for a student (e.g. `Rahul Sharma`).
+2. Issue a digital certificate for a candidate with custom titles and description.
 3. Observe the live Kafka event flash on screen in the real-time event monitor.
-4. Click **"Verify QR"** to open the public verification certificate.
-5. Notice the **Redis Cache HIT** badge and sub-2ms response time.
-6. Click the red **"Simulate Tampering Attack"** button:
-   * The gRPC cryptographic validation engine re-evaluates the SHA-256 seal and immediately flags the certificate as **forged/tampered**.
+4. Click **"Verify QR"** to open the official certificate with its embedded QR seal.
+5. Click **"Download Certificate (PDF)"** to save the crisp PDF copy.
+6. Scan the QR code with any phone camera to view the tamper-proof verified card (sub-2ms response via Redis cache).
+7. Notice that mobile scanning is strictly isolated with zero access to the administration dashboard.
 
----
-
-## 📖 Technical Interview Preparation
-See the full interview script and answer bank in [**`INTERVIEW_CHEATSHEET.md`**](file:///c:/dezinet/INTERVIEW_CHEATSHEET.md).
